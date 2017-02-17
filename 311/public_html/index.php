@@ -50,7 +50,7 @@
 							<span>Lowest Case Type: Street Horticulture</span><br>
 						</div>
 					</div>
-					<a href="#" id="resetButton" class="button">Show All</a>
+					<a href="#" id="resetButton" class="button">Reset</a>
 					<a href="#" id="setFiltersButton" class="button">Filters</a>
                                         <a href="#" id="searchButton" class="button">Search</a>
 				</div>

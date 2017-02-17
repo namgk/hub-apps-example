@@ -1,6 +1,6 @@
 <?php
 
-$dbhost = 'localhost';  
+$dbhost = 'mongo';  
 $dbname = '311';
 
 // Get AJAX parameters

@@ -3,7 +3,7 @@
 include "case311.php";
 
 // Connect to mongodb
-$dbhost = 'localhost';  
+$dbhost = 'mongo';  
 $dbname = '311';
 $geocodeCollection = 'geocode';
 $caseCollection = 'case';

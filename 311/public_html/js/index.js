@@ -120,7 +120,7 @@ $(document).ready(function() {
 		    });
 	      }
 	    });
-	    regionLayer.addTo(map);
+	    // regionLayer.addTo(map);
 	    create_map_controls();
 	});
 
@@ -181,12 +181,15 @@ $(document).ready(function() {
 		queryDistinctFields ("dataset", null, function(response){
 			var items = JSON.parse(response);
 			//populate databar
-			$.each(items, function (i, item) {
-			 	$('#datasetSelect').append($('<option>', { 
-			        value: item,
-			        text : item 
-			    }));
-			});
+			console.log($("#datasetSelect").children('option').length)
+			if ($("#datasetSelect").children('option').length === 0){
+				$.each(items, function (i, item) {
+				 	$('#datasetSelect').append($('<option>', { 
+				        value: item,
+				        text : item 
+				    }));
+				});
+			}
 			// Plot current selected dataset
 			var query = JSON.stringify({"dataset":$("#datasetSelect").val()});
 			query311MapPins("find",query, function(response){
@@ -265,8 +268,8 @@ $(document).ready(function() {
 
 	function create_map_controls(){
 		var overlayMaps = {
-            'Heatmap': heatmapLayer,
-            'Neighbourhoods':regionLayer
+            'Heatmap': heatmapLayer
+            // 'Neighbourhoods':regionLayer
 	    }; 
 	    var controls = L.control.layers(null, overlayMaps, {collapsed: false});
 		controls.addTo(map);
