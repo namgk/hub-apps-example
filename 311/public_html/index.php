@@ -44,10 +44,10 @@
 					<div id="case_overview_desc" class="description">
 						<h3 class="title">Vancouver 311</h3>
 						<div class ="text">
-							<span>Month: October 2013</span><br>
-							<span>Total Cases: 10718</span><br>
-							<span>Highest Case Division: Sanitation</span><br>
-							<span>Lowest Case Type: Street Horticulture</span><br>
+							<span id="month">Month: October 2013</span><br>
+							<span id="total">Total Cases: 10718</span><br>
+							<span id="highest">Highest Case Division: Sanitation</span><br>
+							<span id="lowest">Lowest Case Type: Street Horticulture</span><br>
 						</div>
 					</div>
 					<a href="#" id="resetButton" class="button">Reset</a>

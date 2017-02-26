@@ -181,7 +181,6 @@ $(document).ready(function() {
 		queryDistinctFields ("dataset", null, function(response){
 			var items = JSON.parse(response);
 			//populate databar
-			console.log($("#datasetSelect").children('option').length)
 			if ($("#datasetSelect").children('option').length === 0){
 				$.each(items, function (i, item) {
 				 	$('#datasetSelect').append($('<option>', { 
@@ -191,19 +190,50 @@ $(document).ready(function() {
 				});
 			}
 			// Plot current selected dataset
-			var query = JSON.stringify({"dataset":$("#datasetSelect").val()});
+			var dataset = $("#datasetSelect").val();
+			$('#month').text('Month: ' + dataset)
+			var query = JSON.stringify({"dataset":dataset});
 			query311MapPins("find",query, function(response){
 				var json = JSON.parse(response);
 				var itemArray=new Array();
-	           	var heatmapArray=new Array();
-	           	$.each(json["results"], function (i, ob) {
-	            	heatmapArray.push({lat:json["results"][i]["geo"]["coordinates"][1] , lon:json["results"][i]["geo"]["coordinates"][0] , value: 1});
-	            	itemArray.push(json["results"][i]);
+       	var heatmapArray=new Array();
+
+       	var divisionMap = {}
+       	var typeMap = {}
+       	$.each(json["results"], function (i, ob) {
+       		var cases = json['results'][i]
+       		var division = cases.division
+       		var type = cases.casetype
+       		divisionMap[division] = divisionMap[division] ? divisionMap[division] + 1 : 1
+       		typeMap[type] = typeMap[type] ? typeMap[type] + 1 : 1
+        	heatmapArray.push({lat:json["results"][i]["geo"]["coordinates"][1] , lon:json["results"][i]["geo"]["coordinates"][0] , value: 1});
+        	itemArray.push(json["results"][i]);
 				});
-	        	plot_pins(itemArray);
-	        	create_plots(itemArray);
-	        	create_heatmap(heatmapArray);
-	        });
+
+       	var highestDivision
+       	var maxDiv = 0
+       	for (var x in divisionMap){
+       		if (divisionMap[x] > maxDiv){
+       			maxDiv = divisionMap[x]
+       			highestDivision = x
+       		}
+       	}
+       	var lowestType
+       	var minType = 9999999999
+       	for (var y in typeMap){
+       		if (typeMap[y] < minType){
+       			minType = typeMap[y]
+       			lowestType = y
+       		}
+       	}
+				$('#total').text('Total cases: ' + heatmapArray.length)
+				$('#highest').text('Highest Case Division: ' + highestDivision)
+				$('#lowest').text('Lowest Case Type: ' + lowestType)
+
+      	plot_pins(itemArray);
+      	create_plots(itemArray);
+      	create_heatmap(heatmapArray);
+      });
 
 	        //populate departments and divisions
 			//TODO: add dataset in query
