@@ -1,7 +1,7 @@
 <?php
 ini_set("memory_limit","-1");
 
-$dbhost = 'localhost';  
+$dbhost = 'mongo';  
 $dbname = 'demo';
 
 // Get AJAX parameters
@@ -21,11 +21,17 @@ $dbCollection = $db->$collection;
 
 // Query MongoDB
 if ($query==""){
-    $cursor = $db->$collection->find(array(), array("_id" => 0, "gullyid" => 0,"access"=>0, "lastupdate"=>0, "name"=>0, "timestamp"=>0, "geo"=>0))->skip((float)$offset)->limit((float)$limit); //set limit on results to return
+    $cursor = $db->$collection->find(array(), array("_id"=>0,"la" => 1, "ln" => 1,"si" => 1,"st" => 1,"ty" => 1,"sid" => 1))->skip((float)$offset)->limit((float)$limit);
 }else{
-	$query_decoded = json_decode($query);
-    $cursor = $db->$collection->find($query_decoded, array("_id" => 0, "gullyid" => 0,"access"=>0, "lastupdate"=>0, "name"=>0, "timestamp"=>0, "geo"=>0))->skip((float)$offset)->limit((float)$limit);
+  $query_decoded = json_decode($query);
+    $cursor = $db->$collection->find($query_decoded, array("_id"=>0,"la" => 1, "ln" => 1,"si" => 1,"st" => 1,"ty" => 1,"sid" => 1))->skip((float)$offset)->limit((float)$limit);
 }
+// if ($query==""){
+//     $cursor = $db->$collection->find(array(), array("_id" => 0, "gullyid" => 0,"access"=>0, "lastupdate"=>0, "name"=>0, "timestamp"=>0, "geo"=>0))->skip((float)$offset)->limit((float)$limit); //set limit on results to return
+// }else{
+// 	$query_decoded = json_decode($query);
+//     $cursor = $db->$collection->find($query_decoded, array("_id" => 0, "gullyid" => 0,"access"=>0, "lastupdate"=>0, "name"=>0, "timestamp"=>0, "geo"=>0))->skip((float)$offset)->limit((float)$limit);
+// }
 $queryArray= array("query"=>$query);
 $newOffset = (float)$offset+(float)$limit;
 $offsetArray= array("newOffset"=>$newOffset);

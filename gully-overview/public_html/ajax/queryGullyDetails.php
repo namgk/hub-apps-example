@@ -1,7 +1,7 @@
 <?php
 ini_set("memory_limit","-1");
 
-$dbhost = 'localhost';  
+$dbhost = 'mongo';  
 $dbname = 'demo';
 
 // Get AJAX parameters

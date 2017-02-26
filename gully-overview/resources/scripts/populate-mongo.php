@@ -13,19 +13,15 @@
  * Schedule a CRON job to execute this script to update data frequently.
  * For more information about setting up CRON jobs, please see the README file.
  **/
-include "../library/Hypercat.php"; // Hypercat PHP Client API
 include "../library/GullySensor.php"; // Gully Sensor Class
 include "../config.php"; // Config file
+
+set_error_handler('errHandle');
 
 //MongoDB Config Variables 
 $dbhost= $config["mongo"]["dbhost"];
 $dbname = $config["mongo"]["dbname"];
-$collection = "testing";
-
-// Hypercat API Config Variables 
-$api_key= $config["hypercat-api"]["api_key"];
-$base_url = $config["hypercat-api"]["base_url"];
-$catalogue_uri = $config["hypercat-api"]["catalogue_url"];
+$collection = "gully";
 
 // Initialise MongoDB connection
 try {
@@ -37,92 +33,75 @@ $db = $m->$dbname;
 $collection = $db->$collection;
 
 /*** Retrieve gully data via Hypercat API PHP client ***/
-$config = array("key"=> $api_key,
-         "baseUrl"=> $base_url,
-         "catalogueUri"=> $catalogue_uri
-        );
-$client = new Hypercat($config);
 // Set Simple Search parameters
-$param=array(
-	"rel"=> "urn:X-smartstreets:rels:tags",
-    "val"=> "Gully"
-);
-$offset = 0; // Set paging offset
-$limit = 10; // Set paging limit
 
-$finish=false;
-do{
-	$results = $client->searchCatalogue($param, $offset, $limit); 
-	foreach($results['items'] as $item) {
-		$sensor_id=null;
-		$lastupdate=null;
-		$data_href=null;
-		foreach ($item["i-object-metadata"] as $metadata){
-			if ($metadata["rel"]=="urn:X-smartstreets:rels:hasId"){
-				$sensor_id= $metadata["val"];
-			}
-			if ($metadata["rel"]=="urn:X-smartstreets:rels:lastUpdate"){
-				$lastupdate= $metadata["val"];
-			}
-			if ($metadata["rel"]=="urn:X-smartstreets:rels:data"){
-				$data_href= $metadata["val"];
-			}
-		}
-		// Query Mongo to see if item with sensor ID already exists
-		$query = array("sid"=> (int)$sensor_id);
-		$cursor = $collection->find($query);
-		
-		if ($cursor->count()==0){
-			print_r ("Created new Sensor item! New sensor Id: ".$sensor_id."\n");
-			$response=curl_with_authentication($data_href, $api_key);
-			// Insert new item to MongoDB
-			var_dump($data_href);
-			var_dump($response);
-			$gully = new GullySensor($response, $lastupdate);
-			$gullyArray =$gully->create_db_object();
-			if ($gullyArray["la"]!==null)
-				var_dump($gullyArray);
-				$collection->insert($gullyArray);
-		}else{
-			foreach ($cursor as $doc) {
-				if ($doc["lastupdate"]==$lastupdate)
-					print_r ("Sensor has not been updated since last check. \n");
-				else{
-					print_r ("Updated Sensor!\n");
-					// Update existing item in MongoDB
-					$response=curl_with_authentication($data_href, $api_key);
-					$gully = new GullySensor($response["data"], $lastupdate);
-					$gullyArray =$gully->create_db_object();
-			//		if ($gullyArray["la"]!==null)
-			//			$collection->update($query, array('$set'=>$gullyArray));
-				}
-			}
-		}
-	}
-	$offset+=$limit; // Increment paging offset
-	// Finish loop when reaching end of all sensor results
-	if (count($results['items'])==0){
-		$finish=true;
-		$collection->ensureIndex(array("geo" => "2dsphere"));
-	}
-}while(!$finish);
+$results = null;
 
-function curl_with_authentication ($url, $key){
-	// Initialise cURL
-    $ch = curl_init();
-    //set url
-    curl_setopt($ch, CURLOPT_URL, $url);
-    //Allows results to be saved in variable and not printed out
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    if (base64_decode($key,true))
-    	$headerRel="Aurthorization";
-    else
-        $headerRel="x-api-key";
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-        	$headerRel.': '.$key,
-      	));
-    $response = curl_exec($ch);
-    curl_close($ch);
-    return $response;
+// Parse CSV file 
+$file="";
+$row=2;
+if (isset($argv[1]))
+   $file = (string)$argv[1]; // use the command line argument for file name
+else
+  die("Error: Please provide file name as command argument.\n");
+if (isset($argv[2])){
+  if (is_numeric($argv[2]))
+    $row = (int)$argv[2]; // use the command line argument for file name
+  else
+    die("Error: Please provide an integer starting row number.\n");
+}
+
+$fp = fopen($file,'r') or die("Can not open file! \n");
+
+$count=0;
+while($csvline = fgetcsv($fp,1024)) {
+  $count++;
+  if ($count < 74000){ // max: 75900
+    continue;
+  }
+  $lastupdate = '2017-02-24';
+  $gullySensorInput=csv_to_gully($csvline);
+  $gully = new GullySensor($gullySensorInput, $lastupdate);
+  var_dump($gully);
+
+  $gullyArray =$gully->create_db_object();
+  if ($gullyArray["la"]!==null)
+    var_dump($gullyArray);
+    $collection->insert($gullyArray);
+
+  //TODO: gracefully detect end of file
+}
+
+fclose($fp) or die("can not close file");
+
+$collection->ensureIndex(array("geo" => "2dsphere"));
+
+function csv_to_gully ($csvline){
+  $desc = $csvline[0];
+  $id = $csvline[1];
+  $timestamp = $csvline[2];
+  $data = json_decode($csvline[3], true);
+  $data['id'] = $id;
+  $data['sensor_id'] = $id;
+  $data['timestamp'] = $timestamp;
+  $data['sensor_name'] = 'noname';
+
+  $gully = array(
+    'data' => array(
+      0 => $data
+    )
+  );
+  
+  var_dump($gully);
+	return $gully;
+}
+
+function errHandle($errNo, $errStr, $errFile, $errLine) {
+    $msg = "$errStr in $errFile on line $errLine";
+    if ($errNo == E_NOTICE || $errNo == E_WARNING) {
+        throw new ErrorException($msg, $errNo);
+    } else {
+        echo $msg;
+    }
 }
 ?>

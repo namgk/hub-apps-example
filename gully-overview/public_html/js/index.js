@@ -4,7 +4,7 @@ $(document).ready(function() {
 	//var baseLayer=new L.TileLayer(cloudmadeUrl);
 	var baseLayer = MQ.mapLayer();
 	var nw,se;
-	var limit =4000;
+	var limit =400;
 	var itemArray=[];
     var heatmapArray=[];
     var oldQuery;
@@ -25,8 +25,8 @@ $(document).ready(function() {
 	var map = new L.Map("map", {
 	    center: [54.56011889582139, -1.023101806640625],
       	zoom: 11,
-      	minZoom: 10,
-      	maxZoom:17,
+      	minZoom: 1,
+      	maxZoom:77,
       	layers: [baseLayer, heatmapLayer]
 	});
 	map.setView(new L.LatLng(54.56011889582139, -1.023101806640625), 11);
@@ -118,7 +118,7 @@ $(document).ready(function() {
 	  	}
 
 	  	function queryAllGullies(query, offset){
-	  		$.post( "./ajax/queryGullies.php", {collection: "testgully", query: query, limit: limit, offset: offset})
+	  		$.post( "./ajax/queryGullies.php", {collection: "gully", query: query, limit: limit, offset: offset})
 			  .done(function( response ) {
 			    processGullyData(response, query, collection);
 			});
@@ -139,92 +139,95 @@ $(document).ready(function() {
 
 
 	  	function processGullyData(response, query, collection){
-	  			var json= JSON.parse(response);
+  			var json= JSON.parse(response);
 
-			   	var counter=0;
-            	$.each(json["results"], function (i, ob) {
-	            		var silt = parseFloat(ob["si"]);
-	            		if (silt >=50){
-	            			heatmapArray.push({lat:ob["la"] , lon:ob["ln"] , value: silt});
-	            		}else{
-	            			heatmapArray.push({lat:ob["la"] , lon:ob["ln"] , value: 0});
-	            		}
-	            		itemArray.push(json["results"][i]);
-	            		counter++;
+		   	var counter=0;
+      	$.each(json["results"], function (i, ob) {
+        		var silt = parseFloat(ob["si"]);
+        		if (silt >=50){
+        			heatmapArray.push({lat:ob["la"] , lon:ob["ln"] , value: silt});
+        		}else{
+        			heatmapArray.push({lat:ob["la"] , lon:ob["ln"] , value: 0});
+        		}
+        		itemArray.push(json["results"][i]);
+        		//counter++;
 				});
 
 				if (counter ==0){
-			    	preloader_off();
-			    	var heatmapData = {max: 100000, data: heatmapArray};
-					heatmapLayer.setData(heatmapData.data);
+		    	preloader_off();
+		    	var heatmapData = {max: 100000, data: heatmapArray};
+		    	console.log(heatmapArray)
+		    	if (heatmapArray.length > 0){
+						heatmapLayer.setData(heatmapData.data);
+		    	}
 			    	// plotData();
-			    }else{
-			    queryAllGullies(query, json["newOffset"]);
+		    // } else {
+			    //queryAllGullies(query, json["newOffset"]);
 
-				oldQuery=json["query"];
-				//plot map pins
-				g.selectAll(".gully-map-points")
-					.data(itemArray)
-					.enter()
-					.append("circle")
-					.attr("class", "gully-dot gully-map-points gully-stroke")
-					.attr("cx", function(d) {
-		                    return project([d["ln"], d["la"]])[0];
-		            })
-		            .attr("cy", function(d) {
-		                    return project([d["ln"], d["la"]])[1];	                
-		            })
-		            .attr("r", function(d) {
-		            	// var level;
-		            	// if (d.si!=null){
-		            		var level= parseInt(d["si"], 10);	
-		            		return 2*(1+level/25);	            	
-		            	// }else{
-		            	// 	return 0;
-		            	// }
-		        	})
-		        	.on('mouseover',function(d){
-		        		d3.select(this)
-                           .classed("mouseovered", true)
-                           .classed("gully-stroke", false);
-		        	}).on('mouseout', function(d, i){
-                     	d3.select(this)
-                           .classed("mouseovered", false)
-                           .classed("gully-stroke", true);
-                	}).on('click', function(d, i){
-                		var pageX=d3.event.pageX;
-                		var pageY= d3.event.pageY;
-                		var query = {"sid": d.sid};
-				console.log("sid"+d.sensorid);
-                		var stringQuery= JSON.stringify(query);
-                		$.post( "./ajax/queryGullyDetails.php", {collection: "testgully", query: stringQuery})
-						  .done(function( response ) {
-						  	response=JSON.parse(response);
-						  	var height=parseInt($(".tooltip").css("height"),10);
-	                        var tooltip= d3.select(".tooltip");
-	                        tooltip.transition()       
-	                          .duration(200)
-	                          .style("display","block")     
-	                          .style("opacity", .9)
-	                          .style("left", (pageX-100-8) + "px")    
-	                          .style("top", (pageY+20) + "px");
-	                          var content;
-	                        for(key in response){
-	                        	content = response[key];
-	                        }
-	                        //add tooltip content
-	                        $("#tooltip_content").html("");
-	                        $("#tooltip_content").append("<div style='text-align: left;'>Gully ID: <span class='bold'>"+content.gid+"</span></div>");
-	                        $("#tooltip_content").append("<div style='text-align: left;'>Sensor ID: <span class='bold'>"+content.sid+"</span></div>");
-	                        $("#tooltip_content").append("<div style='text-align: left;'>Silt Level: <span class='bold'>"+content.si+"</span></div>");
-	                        $("#tooltip_content").append("<div style='text-align: left;'>Gully Type: <span class='bold'>"+content.ty+"</span></div>");
-	                        $("#tooltip_content").append("<div style='text-align: left;'>Gully State: <span class='bold'>"+content.st+"</span></div>");
-	                        $("#tooltip_content").append("<div style='text-align: left;'>Gully Accessible?: <span class='bold'>"+content.access+"</span></div>");
-	                        $("#tooltip_content").append("<div style='text-align: left;'>Gully Timestamp: <span class='bold'>"+content.timestamp+"</span></div>");
-						});
-                	});
-		        	plotData();
-			    //end of paste
+					oldQuery=""//json["query"];
+					//plot map pins
+					g.selectAll(".gully-map-points")
+						.data(itemArray)
+						.enter()
+						.append("circle")
+						.attr("class", "gully-dot gully-map-points gully-stroke")
+						.attr("cx", function(d) {
+			                    return project([d["ln"], d["la"]])[0];
+			            })
+			            .attr("cy", function(d) {
+			                    return project([d["ln"], d["la"]])[1];	                
+			            })
+			            .attr("r", function(d) {
+			            	// var level;
+			            	// if (d.si!=null){
+			            		var level= parseInt(d["si"], 10);	
+			            		return isNaN(level) ? 0 : 2*(1+level/25);	            	
+			            	// }else{
+			            	// 	return 0;
+			            	// }
+			        	})
+			        	.on('mouseover',function(d){
+			        		d3.select(this)
+	                           .classed("mouseovered", true)
+	                           .classed("gully-stroke", false);
+			        	}).on('mouseout', function(d, i){
+	                     	d3.select(this)
+	                           .classed("mouseovered", false)
+	                           .classed("gully-stroke", true);
+	                	}).on('click', function(d, i){
+	                		var pageX=d3.event.pageX;
+	                		var pageY= d3.event.pageY;
+	                		var query = {"sid": d.sid};
+					console.log(d);
+	                		var stringQuery= JSON.stringify(query);
+	                		$.post( "./ajax/queryGullyDetails.php", {collection: "gully", query: stringQuery})
+							  .done(function( response ) {
+							  	response=JSON.parse(response);
+							  	var height=parseInt($(".tooltip").css("height"),10);
+		                        var tooltip= d3.select(".tooltip");
+		                        tooltip.transition()       
+		                          .duration(200)
+		                          .style("display","block")     
+		                          .style("opacity", .9)
+		                          .style("left", (pageX-100-8) + "px")    
+		                          .style("top", (pageY+20) + "px");
+		                          var content;
+		                        for(key in response){
+		                        	content = response[key];
+		                        }
+		                        //add tooltip content
+		                        $("#tooltip_content").html("");
+		                        $("#tooltip_content").append("<div style='text-align: left;'>Gully ID: <span class='bold'>"+content.gid+"</span></div>");
+		                        $("#tooltip_content").append("<div style='text-align: left;'>Sensor ID: <span class='bold'>"+content.sid+"</span></div>");
+		                        $("#tooltip_content").append("<div style='text-align: left;'>Silt Level: <span class='bold'>"+content.si+"</span></div>");
+		                        $("#tooltip_content").append("<div style='text-align: left;'>Gully Type: <span class='bold'>"+content.ty+"</span></div>");
+		                        $("#tooltip_content").append("<div style='text-align: left;'>Gully State: <span class='bold'>"+content.st+"</span></div>");
+		                        $("#tooltip_content").append("<div style='text-align: left;'>Gully Accessible?: <span class='bold'>"+content.access+"</span></div>");
+		                        $("#tooltip_content").append("<div style='text-align: left;'>Gully Timestamp: <span class='bold'>"+content.timestamp+"</span></div>");
+							});
+	                	});
+			        	plotData();
+				    //end of paste
 			    }
 
 	  	}
