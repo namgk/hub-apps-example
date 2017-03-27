@@ -13,21 +13,15 @@
  * Schedule a CRON job to execute this script to update data frequently.
  * For more information about setting up CRON jobs, please see the README file.
  **/
-include "../library/Hypercat.php"; // Hypercat PHP Client API
 include "../library/GullySensor.php"; // Gully Sensor Class
 include "../config.php"; // Config file
+
+set_error_handler('errHandle');
 
 //MongoDB Config Variables 
 $dbhost= $config["mongo"]["dbhost"];
 $dbname = $config["mongo"]["dbname"];
-// $collection = $config["mongo"]["collection"];
-$collection = "testgully";
-
-
-// Hypercat API Config Variables 
-$api_key= $config["hypercat-api"]["api_key"];
-$base_url = $config["hypercat-api"]["base_url"];
-$catalogue_uri = $config["hypercat-api"]["catalogue_url"];
+$collection = $config["mongo"]["collection"];
 
 // Initialise MongoDB connection
 try {
@@ -38,17 +32,14 @@ try {
 $db = $m->$dbname;
 $collection = $db->$collection;
 
-/*** Retrieve gully data via Hypercat API PHP client ***/
-$config = array("key"=> $api_key,
-         "baseUrl"=> $base_url,
-         "catalogueUri"=> $catalogue_uri
-        );
-$client = new Hypercat($config);
-// Set Simple Search parameters
-$param=array(
-	"rel"=> "urn:X-smartstreets:rels:tags",
-    "val"=> "Gully"
-);
+
+
+
+
+
+
+
+
 $offset = 0; // Set paging offset
 $limit = 10; // Set paging limit
 
@@ -125,5 +116,14 @@ function curl_with_authentication ($url, $key){
     $response = curl_exec($ch);
     curl_close($ch);
     return $response;
+}
+
+function errHandle($errNo, $errStr, $errFile, $errLine) {
+    $msg = "$errStr in $errFile on line $errLine";
+    if ($errNo == E_NOTICE || $errNo == E_WARNING) {
+        throw new ErrorException($msg, $errNo);
+    } else {
+        echo $msg;
+    }
 }
 ?>

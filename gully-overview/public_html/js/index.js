@@ -4,7 +4,7 @@ $(document).ready(function() {
 	//var baseLayer=new L.TileLayer(cloudmadeUrl);
 	var baseLayer = MQ.mapLayer();
 	var nw,se;
-	var limit =400;
+	var limit =4000;
 	var itemArray=[];
     var heatmapArray=[];
     var oldQuery;

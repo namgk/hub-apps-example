@@ -21,7 +21,7 @@ set_error_handler('errHandle');
 //MongoDB Config Variables 
 $dbhost= $config["mongo"]["dbhost"];
 $dbname = $config["mongo"]["dbname"];
-$collection = "gully";
+$collection = $config["mongo"]["collection"];
 
 // Initialise MongoDB connection
 try {
@@ -62,11 +62,11 @@ while($csvline = fgetcsv($fp,1024)) {
   $lastupdate = '2017-02-24';
   $gullySensorInput=csv_to_gully($csvline);
   $gully = new GullySensor($gullySensorInput, $lastupdate);
-  var_dump($gully);
+  //var_dump($gully);
 
   $gullyArray =$gully->create_db_object();
   if ($gullyArray["la"]!==null)
-    var_dump($gullyArray);
+    //var_dump($gullyArray);
     $collection->insert($gullyArray);
 
   //TODO: gracefully detect end of file

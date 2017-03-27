@@ -7,7 +7,7 @@
 $config = array(
 	"mongo" => array(
 		"dbname" => "demo",
-		"dbhost" => "localhost",
+		"dbhost" => "mongo",
 		"collection" => "testgully"
 	),
 	"hypercat-api" => array(
